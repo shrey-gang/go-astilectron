@@ -2,15 +2,15 @@ package astilectron
 
 import (
 	"context"
-
-	"github.com/asticode/go-astitools/context"
 )
 
 // Session event names
 const (
-	EventNameSessionCmdClearCache     = "session.cmd.clear.cache"
-	EventNameSessionEventClearedCache = "session.event.cleared.cache"
-	EventNameSessionEventWillDownload = "session.event.will.download"
+	EventNameSessionCmdClearCache       = "session.cmd.clear.cache"
+	EventNameSessionEventClearedCache   = "session.event.cleared.cache"
+	EventNameSessionEventWillDownload   = "session.event.will.download"
+	EventNameSessionCmdFlushStorage     = "session.cmd.flush.storage"
+	EventNameSessionEventFlushedStorage = "session.event.flushed.storage"
 )
 
 // Session represents a session
@@ -22,15 +22,24 @@ type Session struct {
 }
 
 // newSession creates a new session
-func newSession(parentCtx context.Context, c *asticontext.Canceller, d *dispatcher, i *identifier, w *writer) *Session {
-	return &Session{object: newObject(parentCtx, c, d, i, w, i.new())}
+func newSession(ctx context.Context, d *dispatcher, i *identifier, w *writer) *Session {
+	return &Session{object: newObject(ctx, d, i, w, i.new())}
 }
 
 // ClearCache clears the Session's HTTP cache
 func (s *Session) ClearCache() (err error) {
-	if err = s.isActionable(); err != nil {
+	if err = s.ctx.Err(); err != nil {
 		return
 	}
-	_, err = synchronousEvent(s.c, s, s.w, Event{Name: EventNameSessionCmdClearCache, TargetID: s.id}, EventNameSessionEventClearedCache)
+	_, err = synchronousEvent(s.ctx, s, s.w, Event{Name: EventNameSessionCmdClearCache, TargetID: s.id}, EventNameSessionEventClearedCache)
+	return
+}
+
+// FlushStorage writes any unwritten DOMStorage data to disk
+func (s *Session) FlushStorage() (err error) {
+	if err = s.ctx.Err(); err != nil {
+		return
+	}
+	_, err = synchronousEvent(s.ctx, s, s.w, Event{Name: EventNameSessionCmdFlushStorage, TargetID: s.id}, EventNameSessionEventFlushedStorage)
 	return
 }
